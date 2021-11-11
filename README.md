@@ -141,19 +141,19 @@ Rscript Mini-IsoQLR.R -i ${gff3} -o ${outputDir} -l ${error} -r ${runName}
 ### The figures should look like:
 
 **`Multiplex1_BARCODE01.combined_plot_vertical.jpeg`**
-[![Workflow](https://github.com/TBLabFJD/Mini-IsoQLR/example/results/Multiplex1_BARCODE01.combined_plot_vertical.jpeg)](https://github.com/TBLabFJD/Mini-IsoQLR)
+[![Workflow](https://github.com/TBLabFJD/Mini-IsoQLR/blob/master/example/results/Multiplex1_BARCODE01.combined_plot_vertical.jpeg)](https://github.com/TBLabFJD/Mini-IsoQLR)
 
 
 **`Multiplex1_BARCODE01.all_isoform_information.jpeg`**
-[![Workflow](https://github.com/TBLabFJD/Mini-IsoQLR/example/results/Multiplex1_BARCODE01.all_isoform_information.jpeg)](https://github.com/TBLabFJD/Mini-IsoQLR)
+[![Workflow](https://github.com/TBLabFJD/Mini-IsoQLR/blob/master/example/results/Multiplex1_BARCODE01.all_isoform_information.jpeg)](https://github.com/TBLabFJD/Mini-IsoQLR)
 
 
 **`Multiplex1_BARCODE01.breakpoints.jpeg`** 
-[![Workflow](https://github.com/TBLabFJD/Mini-IsoQLR/example/results/Multiplex1_BARCODE01.breakpoints.jpeg)](https://github.com/TBLabFJD/Mini-IsoQLR)
+[![Workflow](https://github.com/TBLabFJD/Mini-IsoQLR/blob/master/example/results/Multiplex1_BARCODE01.breakpoints.jpeg)](https://github.com/TBLabFJD/Mini-IsoQLR)
 
 
 **`Multiplex1_BARCODE01.breakpoint_superplot.jpeg`**
-[![Workflow](https://github.com/TBLabFJD/Mini-IsoQLR/example/results/Multiplex1_BARCODE01.breakpoint_superplot.jpeg)](https://github.com/TBLabFJD/Mini-IsoQLR)
+[![Workflow](https://github.com/TBLabFJD/Mini-IsoQLR/blob/master/example/results/Multiplex1_BARCODE01.breakpoint_superplot.jpeg)](https://github.com/TBLabFJD/Mini-IsoQLR)
 
 
 
