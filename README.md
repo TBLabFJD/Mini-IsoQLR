@@ -1,13 +1,13 @@
-# IsoQLR: Pipeline for Isoform Quantification using Long-Reads sequencing data
+# Mini-IsoQLR: Pipeline for Isoform Quantification using Long-Reads sequencing data
 This pipeline was developed to detect and quantify isoforms from the expression of minigenes, whose cDNA was sequenced using Oxford Nanopore Technologies (ONT).
-This protocol uses [GMAP](https://academic.oup.com/bioinformatics/article/21/9/1859/409207) aligner, which aligns cDNA sequences to a genome, using the parameter `--format=2` which generates a GFF3 file which contains the coordinates of the exons from all reads. Using this information, `IsoQLR.R` classify the mapped reads into isoforms. To do so, it:
+This protocol uses [GMAP](https://academic.oup.com/bioinformatics/article/21/9/1859/409207) aligner, which aligns cDNA sequences to a genome, using the parameter `--format=2` which generates a GFF3 file which contains the coordinates of the exons from all reads. Using this information, `Mini-IsoQLR.R` classify the mapped reads into isoforms. To do so, it:
 1.  defines the consensus breakpoints (start and end of exons which are present in more than 5% of the reads by default), 
 2.  sets a lower and higher threshold that is used to rescue reads whose breakpoints do not exactly coincide with the consensus breakpoints but are close to one,
 3.  assigns the consensus breakpoints to the reads to establish the exons,
 4.  classifies and quantifies reads into isoforms by concatenating the established exons.
 
 ## License
-IsoQLR source code is provided under the [**Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)**](https://creativecommons.org/licenses/by-nc-sa/4.0/). IsoQLR includes several third party packages provided under other open source licenses, please check them for additional details.
+Mini-IsoQLR source code is provided under the [**Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)**](https://creativecommons.org/licenses/by-nc-sa/4.0/). Mini-IsoQLR includes several third party packages provided under other open source licenses, please check them for additional details.
 
 ## Requirements
 This pipeline was tested using the following program/library versions:
@@ -35,14 +35,14 @@ treads=8 # number of threads
 reference="/path/to/reference/genome/with/prefix"
 genomePrefix="genomePrefix"
 fastq="/path/to/sample.fastq"
-outputgff="/path/to/output/file.gff3"
+gff3="/path/to/output/file.gff3"
 error="/path/to/error/file.err" # it is used later on to know the number and ID of unmapped reads
 
-gmap -n1 -t ${treads} --cross-species --gff3-add-separators=0 -f 2 -z auto -D ${reference} -d ${genomePrefix} ${fastq} > ${outputgff} 2> ${error}
+gmap -n1 -t ${treads} --cross-species --gff3-add-separators=0 -f 2 -z auto -D ${reference} -d ${genomePrefix} ${fastq} > ${gff3} 2> ${error}
 ```
 Note that the output of the alignment is printed through the stdout and the logfile through the stderr
 
-The third and last step is to run the R script `IsoQLR.R`.
+The third and last step is to run the R script `Mini-IsoQLR.R`.
 ```sh
 gff3="/path/to/input/file.gff3"
 outputDir="/path/to/output/dir/"
@@ -50,7 +50,7 @@ error="/path/to/error/file.err"
 runName="RunName" # This name will appear in the output file names and figures
 
 mkdir ${outputDir}
-Rscript IsoQLR.R -i ${gff3} -o ${outputDir} -l ${error} -r ${runName}
+Rscript Mini-IsoQLR.R -i ${gff3} -o ${outputDir} -l ${error} -r ${runName}
 ```
 #### Arguments
 | Argument | Default value | Summary |
@@ -91,3 +91,70 @@ Rscript IsoQLR.R -i ${gff3} -o ${outputDir} -l ${error} -r ${runName}
 - `RunName.read_clasification.tsv` - Table containing the classification of all reads:
   - **read_ids:** read identifier,
   - **group:** group which the read is classified in (Unmapped, No_consensus_break_point_reads, Only_vector_reads, isoform_id)
+
+
+
+
+## Run the example
+
+
+
+```sh
+example_dir="/path/to/example"
+
+
+
+# Building the reference genome
+
+output_dir="${example_dir}/references/gmap_index_pPSL3/"
+genomePrefix="pPSL3"
+fasta="${example_dir}/references/pSPL3_PAX6_Ex5-7.fasta"
+
+gmap_build -D ${output_dir} -d ${genomePrefix} ${fasta}
+
+
+
+# Mapping
+
+treads=8 # number of threads
+reference="${example_dir}/references/gmap_index_pPSL3/pPSL3"
+genomePrefix="pPSL3"
+fastq="${example_dir}/fastq/fastq_BARCODE01.fastq"
+gff3="${example_dir}/mapped/cluster_cons_BARCODE01.gff3"
+error="${example_dir}/mapped/log_BARCODE01.err" 
+
+gmap -n1 -t ${treads} --cross-species --gff3-add-separators=0 -f 2 -z auto -D ${reference} -d ${genomePrefix} ${fastq} > ${gff3} 2> ${error}
+
+
+
+# Running Mini-IsoQLR.R
+
+outputDir="${example_dir}/results"
+runName="Multiplex1_BARCODE01" # This name will appear in the output file names and figures
+
+mkdir ${outputDir}
+Rscript Mini-IsoQLR.R -i ${gff3} -o ${outputDir} -l ${error} -r ${runName}
+```
+
+
+
+### The figures should look like:
+
+**`Multiplex1_BARCODE01.combined_plot_vertical.jpeg`**
+[![Workflow](https://github.com/TBLabFJD/Mini-IsoQLR/example/results/Multiplex1_BARCODE01.combined_plot_vertical.jpeg)](https://github.com/TBLabFJD/Mini-IsoQLR/example/results/)
+
+
+**`Multiplex1_BARCODE01.all_isoform_information.jpeg`**
+[![Workflow](https://github.com/TBLabFJD/Mini-IsoQLR/example/results/Multiplex1_BARCODE01.all_isoform_information.jpeg)](https://github.com/TBLabFJD/Mini-IsoQLR/example/results/)
+
+
+**`Multiplex1_BARCODE01.breakpoints.jpeg`** 
+[![Workflow](https://github.com/TBLabFJD/Mini-IsoQLR/example/results/Multiplex1_BARCODE01.breakpoints.jpeg)](https://github.com/TBLabFJD/Mini-IsoQLR/example/results/)
+
+
+**`Multiplex1_BARCODE01.breakpoint_superplot.jpeg`**
+[![Workflow](https://github.com/TBLabFJD/Mini-IsoQLR/example/results/Multiplex1_BARCODE01.breakpoint_superplot.jpeg)](https://github.com/TBLabFJD/Mini-IsoQLR/example/results/)
+
+
+
+
