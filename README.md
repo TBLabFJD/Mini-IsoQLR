@@ -6,6 +6,9 @@ This protocol uses [GMAP](https://academic.oup.com/bioinformatics/article/21/9/1
 3.  assigns the consensus breakpoints to the reads to establish the exons,
 4.  classifies and quantifies reads into isoforms by concatenating the established exons.
 
+[![Workflow](https://github.com/TBLabFJD/Mini-IsoQLR/blob/master/Workflow.png)](https://github.com/TBLabFJD/Mini-IsoQLR)
+Complete bioinformatic protocol we followed using data sequended with a MinION sequencer(Oxford Nanopore Technology). Basecalling, demultiplexing and quality filtering is not included in the pipeline. This pipeline starts from the FASTQ file.
+
 ## License
 Mini-IsoQLR source code is provided under the [**Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)**](https://creativecommons.org/licenses/by-nc-sa/4.0/). Mini-IsoQLR includes several third party packages provided under other open source licenses, please check them for additional details.
 
@@ -65,13 +68,15 @@ Rscript Mini-IsoQLR.R -i ${gff3} -o ${outputDir} -l ${error} -r ${runName}
 | -f/--final | null | final position of the segment of study (trimming) |
 | -t/--threshold | 5 | threshold (0-100%) used to filter the breakpoints present in mode than x % of the reads |
 | -p/--padding | 5 | number of bases to each side from a defined break point to consider a read as part of that group |
+| -a/--abundance | 5 | only isoforms with a percentage equal or higher will be displayed on the combined plot |
+
 
 ### Output
 **Figures:**
 - `RunName.all_isoform_information(.jpeg|.pdf)` - Figure showing all detected isoforms, their proportion and exon coordinates
 - `RunName.breakpoints(.jpeg|.pdf)` - Figure representing the distribution of the breakpoints of all reads (it represents the coordinates that are in between the specify coordinates)
 - `RunName.breakpoint_superplot(.jpeg|.pdf)` - Figure showing the percentage of reads with a breakpoint in each position of the whole genome (it does not take into account the specify coordinates, but all). Similar to the `RunName.breakpoints.jpeg` but it takes into account all positions and the percentage is calculated for each position (like an histogram where the number of bins = number of positions in the x-axis)
-- `RunName.combined_plot_vertical(.jpeg|.pdf)` - Two aligned plots (by the nucleotide position) showing A) isoforms detected in more than 3% of the reads, their proportion and exon coordinates, and B) the distribution of the breakpoints of all reads (it represents the coordinates that are in between the specify coordinates)
+- `RunName.combined_plot_vertical(.jpeg|.pdf)` - Two aligned plots (by the nucleotide position) showing A) isoforms detected in more than 5% (by default) of the reads, their proportion and exon coordinates, and B) the distribution of the breakpoints of all reads (it represents the coordinates that are in between the specify coordinates)
 
 **Tables:**
 - `RunName.breakpoints_info.tsv` - Table containing the following information of all breakpoints: 
@@ -100,8 +105,9 @@ Rscript Mini-IsoQLR.R -i ${gff3} -o ${outputDir} -l ${error} -r ${runName}
 
 
 ```sh
-example_dir="/path/to/example"
+repo_path="/local/path/to/the/Mini-IsoQLR/repository/"
 
+example_dir="${repo_path}/example"
 
 
 # Building the reference genome
@@ -133,7 +139,7 @@ outputDir="${example_dir}/results"
 runName="Multiplex1_BARCODE01" # This name will appear in the output file names and figures
 
 mkdir ${outputDir}
-Rscript Mini-IsoQLR.R -i ${gff3} -o ${outputDir} -l ${error} -r ${runName}
+Rscript ${repo_path}/Mini-IsoQLR.R -i ${gff3} -o ${outputDir} -l ${error} -r ${runName}
 ```
 
 

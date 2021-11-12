@@ -1,4 +1,4 @@
-# Author: Gonzalo Nunez
+# Author: Gonzalo Nunez Moreno
 # Date: 05/07/2021
 
 library(ggplot2)
@@ -25,11 +25,13 @@ option_list = list(
   make_option(c("-f", "--final"), type="integer", default=NULL, 
               help="final position of the segment of study (trimming)", metavar="integer"),
   
-  make_option(c("-t", "--threshold"), type="integer", default=5, 
+  make_option(c("-t", "--threshold"), type="double", default=5, 
               help="threshold (0-100%) used to filter the breakpoints present in mode than x % of the reads [default= %default]", metavar="integer"),
   make_option(c("-p", "--padding"), type="integer", default=5, 
-              help="number of bases to each side from a defined break point to consider a read as part of that group [default= %default]", metavar="integer")
-)
+              help="number of bases to each side from a defined break point to consider a read as part of that group [default= %default]", metavar="integer"),
+  make_option(c("-a", "--abundance"), type="double", default=5, 
+              help="only isoforms with a percentage equal or higher will be displayed on the combined plot [default= %default]", metavar="integer")
+  )
 
 opt_parser = OptionParser(option_list=option_list);
 opt = parse_args(opt_parser);
@@ -43,6 +45,7 @@ inicio = opt$beginning
 final = opt$final
 breakpoint_freq_threshold = opt$threshold
 breakpoint_padding = opt$padding
+abundance = opt$abundance
 
 # gff3_path = "/home/gonzalo/tblab/home/gonzalo/pax6/post_trimm_multiplex1/mapped/cluster_cons_BARCODE02.gff3"
 # plot_path = "/home/gonzalo/tblab/home/gonzalo/pax6/post_trimm_multiplex1/plots/plot_BARCODE02/"
@@ -267,10 +270,10 @@ ggsave(path = plot_path, filename = paste(run_name, ".all_isoform_information.jp
 
 
 
-reference = data.frame(x_pos = unique(df_pos[df_pos$perc >= 3, "x_pos"]),
+reference = data.frame(x_pos = unique(df_pos[df_pos$perc >= abundance, "x_pos"]),
                        perc = 100,
                        y_pos = factor("Break points", levels = c(rev(isoform_id_all), "Break points")),
-                       paste_pair = seq(1,length(unique(df_pos[df_pos$perc >= 3, "x_pos"])),1))
+                       paste_pair = seq(1,length(unique(df_pos[df_pos$perc >= abundance, "x_pos"])),1))
 
 df_plot = rbind.fill(df_pos, reference)
 df_plot$y_pos = ordered(df_plot$y_pos, c(rev(isoform_id_all),"Break points"))
@@ -356,7 +359,7 @@ isoform_frequencies_plot$iso = factor(isoform_frequencies_plot$iso, levels = c("
 isoform_frequencies_plot$perc = as.numeric(isoform_frequencies_plot$perc)
 
 
-p11 = ggplot(df_pos[df_pos$perc >= 3,], aes(x = x_pos, y = y_pos, color = star_stop)) + 
+p11 = ggplot(df_pos[df_pos$perc >= abundance,], aes(x = x_pos, y = y_pos, color = star_stop)) + 
   geom_line(aes(group = paste_pair), size = 2) +
   ylab("Isoform ID\n(% of reads)") +
   xlab("Position") +
@@ -398,7 +401,7 @@ p44
 
 
 
-num_iso = max(c(length(unique(df_pos[df_pos$perc >= 3,"y_pos"])), length(unique(df_pos[df_pos$perc >= 3,"star_stop"])) + 1), 4)
+num_iso = max(c(length(unique(df_pos[df_pos$perc >= abundance,"y_pos"])), length(unique(df_pos[df_pos$perc >= abundance,"star_stop"])) + 1), 4)
 
 p_vertical_2 = cowplot::plot_grid(p11, p44, ncol=1, align='v', rel_heights = c(num_iso/3,2), axis = "lr")
 p_vertical_2
