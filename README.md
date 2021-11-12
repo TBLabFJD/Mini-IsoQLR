@@ -7,7 +7,7 @@ This protocol uses [GMAP](https://academic.oup.com/bioinformatics/article/21/9/1
 4.  classifies and quantifies reads into isoforms by concatenating the established exons.
 
 [![Workflow](https://github.com/TBLabFJD/Mini-IsoQLR/blob/master/Workflow.png)](https://github.com/TBLabFJD/Mini-IsoQLR)
-Complete bioinformatic protocol we followed using data sequended with a MinION sequencer(Oxford Nanopore Technology). Basecalling, demultiplexing and quality filtering is not included in the pipeline. This pipeline starts from the FASTQ file.
+Complete bioinformatics protocol we followed using data sequended with a MinION sequencer(Oxford Nanopore Technology). Basecalling, demultiplexing and quality filtering is not included in the pipeline. This pipeline starts from the FASTQ file.
 
 ## License
 Mini-IsoQLR source code is provided under the [**Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)**](https://creativecommons.org/licenses/by-nc-sa/4.0/). Mini-IsoQLR includes several third party packages provided under other open source licenses, please check them for additional details.
