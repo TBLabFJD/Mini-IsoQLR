@@ -127,7 +127,8 @@ reference="${example_dir}/references/gmap_index_pPSL3/pPSL3"
 genomePrefix="pPSL3"
 fastq="${example_dir}/fastq/fastq_BARCODE01.fastq"
 gff3="${example_dir}/mapped/cluster_cons_BARCODE01.gff3"
-error="${example_dir}/mapped/log_BARCODE01.err" 
+error="${example_dir}/mapped/log_BARCODE01.err"
+mkdir  ${example_dir}/mapped
 
 gmap -n1 -t ${treads} --cross-species --gff3-add-separators=0 -f 2 -z auto -D ${reference} -d ${genomePrefix} ${fastq} > ${gff3} 2> ${error}
 
@@ -135,7 +136,7 @@ gmap -n1 -t ${treads} --cross-species --gff3-add-separators=0 -f 2 -z auto -D ${
 
 # Running Mini-IsoQLR.R
 
-outputDir="${example_dir}/results"
+outputDir="${example_dir}/example_results"
 runName="Multiplex1_BARCODE01" # This name will appear in the output file names and figures
 
 mkdir ${outputDir}
