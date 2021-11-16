@@ -114,7 +114,7 @@ example_dir="${repo_path}/example"
 
 output_dir="${example_dir}/references/gmap_index_pPSL3/"
 genomePrefix="pPSL3"
-fasta="${example_dir}/references/pSPL3_PAX6_Ex5-7.fasta"
+fasta="${example_dir}/references/pSPL3_PAX6_Ex5-7_v2.fasta"
 
 gmap_build -D ${output_dir} -d ${genomePrefix} ${fasta}
 
@@ -140,7 +140,8 @@ outputDir="${example_dir}/example_results"
 runName="Multiplex1_BARCODE01" # This name will appear in the output file names and figures
 
 mkdir ${outputDir}
-Rscript ${repo_path}/Mini-IsoQLR.R -i ${gff3} -o ${outputDir} -l ${error} -r ${runName}
+Rscript ${repo_path}/Mini-IsoQLR.R -i ${gff3} -o ${outputDir} -l ${error} -r ${runName} -b 1200 -f 3500
+
 ```
 
 
