@@ -5,6 +5,8 @@ library(ggplot2)
 #library(ggrepel)
 library(plyr)
 library(optparse)
+library(cowplot)
+
 
 
 #############
@@ -351,7 +353,6 @@ ggsave(path = plot_path, filename = paste(run_name, ".breakpoints.jpeg", sep = "
 # Combined plot #
 #################
 
-library(cowplot)
 isoform_frequencies_plot = isoform_frequencies[isoform_frequencies$perc>=1,]
 isoform_frequencies_plot$iso = paste("Iso", row.names(isoform_frequencies_plot), sep = "")
 isoform_frequencies_plot  = rbind(isoform_frequencies_plot, c("-", 0, 100-sum(isoform_frequencies_plot$perc), "Other"))

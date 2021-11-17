@@ -20,6 +20,7 @@ This pipeline was tested using the following program/library versions:
   - ggplot2 (version 3.3.5)
   - plyr(version 1.8.6)
   - optparse (version 1.7.1)
+  - cowplot (version 1.1.1)
 
 
 ## Getting Started
