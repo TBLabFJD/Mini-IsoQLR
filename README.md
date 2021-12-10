@@ -65,12 +65,14 @@ Rscript Mini-IsoQLR.R -i ${gff3} -o ${outputDir} -l ${error} -r ${runName}
 | -l/--logfile | null | error file from GMAP |
 | -r/--runame | null | run name that will be used as a file prefix and in figure titles |
 | Optional Tool Arguments |
+| -k/--known_sites | null | 4 column, tab delimiter file with known splice sites (no header). Columns: type of splece site ("start"/"end" of the exon), splice site position, minor position, mayor position. Minor and mayor positions are used to asign all the splice sites to the consensus splice site |
 | -b/--beginning | 0 | beginning position of the segment of study (trimming) |
 | -f/--final | null | final position of the segment of study (trimming) |
 | -t/--threshold | 5 | threshold (0-100%) used to filter the breakpoints present in mode than x % of the reads |
 | -p/--padding | 5 | number of bases to each side from a defined break point to consider a read as part of that group |
 | -a/--abundance | 5 | only isoforms with a percentage equal or higher will be displayed on the combined plot |
 
+Note that, although this pipeline detects break points without previous information, it is possible to add known splice sites with the `-k/--known_sites` argument. The program won't report any splice site of the same type ("start"/"end") inside the specified range. We have used this parameter to extend the padding of the "end" position of the last exon of one of the cases as the low sequenced quality of this exon did not produce a well defined modal distribution in this point. We ran `Mini-IsoQLR.R` twice: the fist one to check the possible rage seeing the break point distribution, and the second time defining this break point. 
 
 ### Output
 **Figures:**

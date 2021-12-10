@@ -22,6 +22,9 @@ option_list = list(
   make_option(c("-r", "--runame"), type="character", default=NULL, 
               help="run name that will be used as a file prefix and in figure titles", metavar="character"),
   
+  make_option(c("-k", "--known_sites"), type="character", default=NULL, 
+              help="4 column, tab delimiter file with known splice sites (no header). Columns: type of splece site (\"start\"/\"end\" of the exon), splice site position, minor position, mayor position. Minor and mayor positions are used to asign all the splice sites to the consensus splice site", metavar="character"),
+  
   make_option(c("-b", "--beginning"), type="integer", default=0, 
               help="beginning position of the segment of study (trimming)", metavar="integer"),
   make_option(c("-f", "--final"), type="integer", default=NULL, 
@@ -43,6 +46,7 @@ gff3_path = opt$input
 plot_path = opt$outputdir
 log_map_path = opt$logfile
 run_name = opt$runame
+known_sites_file = opt$known_sites
 inicio = opt$beginning
 final = opt$final
 breakpoint_freq_threshold = opt$threshold
@@ -53,6 +57,7 @@ abundance = opt$abundance
 # plot_path = "/home/gonzalo/tblab/home/gonzalo/pax6/post_trimm_multiplex1/plots/plot_BARCODE02/"
 # log_map_path = "/home/gonzalo/tblab/home/gonzalo/pax6/post_trimm_multiplex1/mapped/log_BARCODE02.err"
 # run_name = "Multiplex1_BARCODE02"
+# known_sites_file = "/home/gonzalo/tblab/home/gonzalo/pax6/start_konw.tsv"
 # inicio = 1200
 # final = 3500
 # breakpoint_freq_threshold = 5
@@ -111,7 +116,7 @@ end_position = data.frame(breakp = as.numeric(names(end_count)), freq = as.numer
 
 
 
-# Break point assignment
+# Break point boundaries
 start_position$left = start_position$breakp - breakpoint_padding
 start_position$right = start_position$breakp + breakpoint_padding
 end_position$left = end_position$breakp - breakpoint_padding
@@ -132,12 +137,6 @@ for (i in 1:(nrow(start_position)-1)){
   }
 }
 
-gff3_filtered$start_tag = NA
-
-for (i in 1:nrow(start_position)){
-  gff3_filtered[gff3_filtered$start >= start_position[i, "left"]  & gff3_filtered$start <= start_position[i, "right"], "start_tag"] = start_position[i, "breakp"]
-}
-
 
 
 for (i in 1:(nrow(end_position)-1)){
@@ -153,8 +152,52 @@ for (i in 1:(nrow(end_position)-1)){
   }
 }
 
-gff3_filtered$end_tag = NA
 
+
+
+
+# Known break points
+if (!is.null(known_sites_file)){
+  known_sites = read.delim(known_sites_file, header = F, stringsAsFactors = F)
+  colnames(known_sites) = c("tipo", "site", "lower", "upper")
+  known_sites$V1 = tolower(known_sites$tipo)
+  
+  for (i in 1:nrow(known_sites)){
+    if (known_sites[i, "tipo"] == "start"){
+      start_position = start_position[!(start_position$breakp >= known_sites[i, "lower"] & start_position$breakp <= known_sites[i, "upper"]), ]
+      start_position[start_position$breakp < known_sites[i, "lower"] & start_position$right >= known_sites[i, "lower"], "right"] = known_sites[i, "lower"] - 1
+      start_position[start_position$breakp > known_sites[i, "lower"] & start_position$left <= known_sites[i, "upper"], "left"] = known_sites[i, "upper"] + 1
+      start_position = rbind(start_position, c(known_sites[i, "site"],
+                                               table(gff3_filtered$start)[as.character(known_sites[i, "site"])],
+                                               known_sites[i, "lower"],
+                                               known_sites[i, "upper"]))
+    } else if (known_sites[i, "tipo"] %in% c("end", "stop")) {
+      end_position = end_position[!(end_position$breakp >= known_sites[i, "lower"] & end_position$breakp <= known_sites[i, "upper"]), ]
+      end_position[end_position$breakp < known_sites[i, "lower"] & end_position$right >= known_sites[i, "lower"], "right"] = known_sites[i, "lower"] - 1
+      end_position[end_position$breakp > known_sites[i, "lower"] & end_position$left <= known_sites[i, "upper"], "left"] = known_sites[i, "upper"] + 1
+      end_position = rbind(end_position, c(known_sites[i, "site"],
+                                           table(gff3_filtered$end)[as.character(known_sites[i, "site"])],
+                                           known_sites[i, "lower"],
+                                           known_sites[i, "upper"]))
+    }
+  }
+}
+  
+
+  
+
+
+
+
+
+# Break point asignment
+gff3_filtered$start_tag = NA
+for (i in 1:nrow(start_position)){
+  gff3_filtered[gff3_filtered$start >= start_position[i, "left"]  & gff3_filtered$start <= start_position[i, "right"], "start_tag"] = start_position[i, "breakp"]
+}
+
+
+gff3_filtered$end_tag = NA
 for (i in 1:nrow(end_position)){
   gff3_filtered[gff3_filtered$end >= end_position[i, "left"]  & gff3_filtered$end <= end_position[i, "right"], "end_tag"] = end_position[i, "breakp"]
 }
@@ -264,9 +307,9 @@ p0 = ggplot(df_pos, aes(x = x_pos, y = y_pos, group = paste_pair, color = star_s
 p0
 
 ggsave(path = plot_path, filename = paste(run_name, ".all_isoform_information.pdf", sep = ""), p0, device="pdf", width = 10,
-       height = 1 + num_isoforms/4)
+       height = 1 + num_isoforms/4, limitsize = F)
 ggsave(path = plot_path, filename = paste(run_name, ".all_isoform_information.jpeg", sep = ""), p0, device="jpeg", width = 10,
-       height = 1 + num_isoforms/4)
+       height = min(1 + num_isoforms/4, 100), limitsize = F)
 
 
 
@@ -310,13 +353,13 @@ p3 = ggplot(df_superplot, aes(x=Var1, y=perc, fill = tipo)) +
   xlab("Break point position") +
   labs(fill = "Break point\ntype") +
   theme_bw() +
-  theme(axis.text.x = element_text(angle = 90))
+  theme(axis.text.x = element_text(angle = 90, size = 2))
 p3
 
 ggsave(path = plot_path, filename = paste(run_name, ".breakpoint_superplot.pdf", sep = ""), p3, device="pdf", width = 100,
-       height = 5, limitsize = FALSE)
+       height = 5, limitsize = F)
 ggsave(path = plot_path, filename = paste(run_name, ".breakpoint_superplot.jpeg", sep = ""), p3, device="jpeg", width = 100,
-       height = 5, limitsize = FALSE)
+       height = 5, limitsize = F)
 
 
 
@@ -331,7 +374,7 @@ df_plot = data.frame(posicion = c(gff3$start, gff3$end),
 p4 = ggplot(df_plot, aes(x=posicion, fill = tipo)) +
   geom_histogram(aes(y=..count../num_reads_post_trimming*100),alpha=0.5, 
                  position="identity", bins = 500) +  
-  scale_x_continuous(breaks = seq(inicio,final,100), limits = c(inicio,final)) +
+  scale_x_continuous(breaks = seq(inicio,final,round((final-inicio)/12, 0)), limits = c(inicio-10,final+10)) +
   ylab("Percentage of reads (after trimming)") +
   xlab("Break point position") +
   labs(fill = "Break point\ntype") +
@@ -339,9 +382,9 @@ p4 = ggplot(df_plot, aes(x=posicion, fill = tipo)) +
 p4
 
 ggsave(path = plot_path, filename = paste(run_name, ".breakpoints.pdf", sep = ""), p4, device="pdf", width = 10,
-       height = 5)
+       height = 5, limitsize = F)
 ggsave(path = plot_path, filename = paste(run_name, ".breakpoints.jpeg", sep = ""), p4, device="jpeg", width = 10,
-       height = 5)
+       height = 5, limitsize = F)
 
 
 
@@ -373,7 +416,7 @@ p11 = ggplot(df_pos[df_pos$perc >= abundance,], aes(x = x_pos, y = y_pos, color 
   theme(axis.title.x=element_blank(),
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank()) +
-  scale_x_continuous(breaks = seq(inicio,final,200), limits = c(inicio,final)) +
+  scale_x_continuous(breaks = seq(inicio,final,round((final-inicio)/12, 0)), limits = c(inicio-10,final+10)) +
   coord_cartesian(c(inicio,final)) +
   theme(plot.margin = unit(c(0.7, 0.7, 0, 0.7), "cm")) +
   theme(plot.background = element_rect(fill = "white", colour = "white")) +
@@ -386,7 +429,7 @@ p11
 p44 = ggplot(df_plot, aes(x=posicion, fill = tipo)) +
   geom_histogram(aes(y=..count../num_reads_post_trimming*100),alpha=0.5, 
                  position="identity", bins = 500) +
-  scale_x_continuous(breaks = seq(inicio,final,200), limits = c(inicio,final)) +
+  scale_x_continuous(breaks = seq(inicio,final,round((final-inicio)/12, 0)), limits = c(inicio-10,final+10)) +
   ylab("% of reads") +
   xlab("Position") +
   labs(fill = "Break point\ntype") +
@@ -408,9 +451,9 @@ p_vertical_2 = cowplot::plot_grid(p11, p44, ncol=1, align='v', rel_heights = c(n
 p_vertical_2
 
 ggsave(path = plot_path, filename = paste(run_name, ".combined_plot_vertical.pdf", sep = ""), p_vertical_2, device="pdf", width = 10,
-       height = 2 + num_iso/3)
+       height = 2 + num_iso/3, limitsize = F)
 ggsave(path = plot_path, filename = paste(run_name, ".combined_plot_vertical.jpeg", sep = ""), p_vertical_2, device="jpeg", width = 10,
-       height = 2 + num_iso/3)
+       height = 2 + num_iso/3, limitsize = F)
 
 
 
