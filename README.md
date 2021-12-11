@@ -66,6 +66,7 @@ Rscript Mini-IsoQLR.R -i ${gff3} -o ${outputDir} -l ${error} -r ${runName}
 | -r/--runame | null | run name that will be used as a file prefix and in figure titles |
 | Optional Tool Arguments |
 | -k/--known_sites | null | 4 column, tab delimiter file with known splice sites (no header). Columns: type of splece site ("start"/"end" of the exon), splice site position, minor position, mayor position. Minor and mayor positions are used to asign all the splice sites to the consensus splice site |
+| -s/--filter_sites | null | 2 column, tab delimiter file with known splice sites (no header) that reads must have to be included in the analysis. This option can be used to filter PCR artifacts by taking into account only reads with both ends (where primers hibridate).  Columns: type of splece site ("start"/"end" of the exon) and splice site position |
 | -b/--beginning | 0 | beginning position of the segment of study (trimming) |
 | -f/--final | null | final position of the segment of study (trimming) |
 | -t/--threshold | 5 | threshold (0-100%) used to filter the breakpoints present in mode than x % of the reads |

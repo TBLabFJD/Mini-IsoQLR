@@ -24,6 +24,8 @@ option_list = list(
   
   make_option(c("-k", "--known_sites"), type="character", default=NULL, 
               help="4 column, tab delimiter file with known splice sites (no header). Columns: type of splece site (\"start\"/\"end\" of the exon), splice site position, minor position, mayor position. Minor and mayor positions are used to asign all the splice sites to the consensus splice site", metavar="character"),
+  make_option(c("-s", "--filter_sites"), type="character", default=NULL, 
+              help="2 column, tab delimiter file with known splice sites (no header) that reads must have to be included in the analysis. This option can be used to filter PCR artifacts by taking into account only reads with both ends (where primers hibridate).  Columns: type of splece site (\"start\"/\"end\" of the exon) and splice site position", metavar="character"),
   
   make_option(c("-b", "--beginning"), type="integer", default=0, 
               help="beginning position of the segment of study (trimming)", metavar="integer"),
@@ -47,6 +49,7 @@ plot_path = opt$outputdir
 log_map_path = opt$logfile
 run_name = opt$runame
 known_sites_file = opt$known_sites
+filter_sites_file = opt$filter_sites
 inicio = opt$beginning
 final = opt$final
 breakpoint_freq_threshold = opt$threshold
@@ -57,14 +60,25 @@ abundance = opt$abundance
 # plot_path = "/home/gonzalo/tblab/home/gonzalo/pax6/post_trimm_multiplex1/plots/plot_BARCODE02/"
 # log_map_path = "/home/gonzalo/tblab/home/gonzalo/pax6/post_trimm_multiplex1/mapped/log_BARCODE02.err"
 # run_name = "Multiplex1_BARCODE02"
-# known_sites_file = "/home/gonzalo/tblab/home/gonzalo/pax6/start_konw.tsv"
+# known_sites_file = NULL
+# filter_sites_file = NULL
 # inicio = 1200
 # final = 3500
 # breakpoint_freq_threshold = 5
 # breakpoint_padding = 5
+# abundance = 5
 
-
-
+# gff3_path = "/home/gonzalo/tblab/home/gonzalo/pax6/post_trimm_multiplex2_2/mapped/cluster_cons_BARCODE08.gff3"
+# plot_path = "/home/gonzalo/tblab/home/gonzalo/pax6/post_trimm_multiplex2_2/plots/plot_BARCODE08/"
+# log_map_path = "/home/gonzalo/tblab/home/gonzalo/pax6/post_trimm_multiplex2_2/mapped/log_BARCODE08.err"
+# run_name = "Multiplex1_BARCODE02"
+# known_sites_file = "/home/gonzalo/tblab/home/gonzalo/pax6/211115_minigenes_multiplex3_2/knownsites.txt"
+# filter_sites_file = "/home/gonzalo/tblab/home/gonzalo/pax6/211115_minigenes_multiplex3_2/filtersites.txt"
+# inicio = 0
+# final = NULL
+# breakpoint_freq_threshold = 5
+# breakpoint_padding = 5
+# abundance = 5
 
 
 ################
@@ -160,7 +174,7 @@ for (i in 1:(nrow(end_position)-1)){
 if (!is.null(known_sites_file)){
   known_sites = read.delim(known_sites_file, header = F, stringsAsFactors = F)
   colnames(known_sites) = c("tipo", "site", "lower", "upper")
-  known_sites$V1 = tolower(known_sites$tipo)
+  known_sites$tipo = tolower(known_sites$tipo)
   
   for (i in 1:nrow(known_sites)){
     if (known_sites[i, "tipo"] == "start"){
@@ -210,12 +224,39 @@ for (i in 1:nrow(end_position)){
 # Exon difinition #
 ###################
 
-# Exon filtering if start/end do not match with with the estimated break points
-exon_id = gff3_filtered[rowSums(is.na(gff3_filtered)) > 0, "id"]
-gff3_filtered_by_exon = gff3_filtered[!gff3_filtered$id %in% exon_id,]
+
+# Read filtering if start/end do not match with with the estimated break points
+exon_id_filter = gff3_filtered[rowSums(is.na(gff3_filtered)) > 0, "id"]
+gff3_filtered_by_exon = gff3_filtered[!gff3_filtered$id %in% exon_id_filter,]
 
 num_reads_post_exon_filtering = length(unique(gff3_filtered_by_exon$id))
 # print(paste("Reads post exon filtering: ", num_reads_post_exon_filtering, sep = ""))
+
+
+# Read filtering selected by argument
+if (!is.null(filter_sites_file)){
+  filter_sites = read.delim(filter_sites_file, header = F, stringsAsFactors = F)
+  colnames(filter_sites) = c("tipo", "site")
+  filter_sites$tipo = tolower(filter_sites$tipo)
+  
+  #filter_start = filter_sites[filter_sites$tipo == "start", "site"]
+  #filter_end = filter_sites[filter_sites$tipo %in% c("end", "stop"), "site"]
+  
+  read_id_filter = c()
+  for (i in 1:nrow(filter_sites)){
+    if (filter_sites[i, "tipo"] == "start"){
+      read_id_filter = c(read_id_filter, gff3_filtered_by_exon[gff3_filtered_by_exon$start_tag == filter_sites[i, "site"],"id"])
+    } else if (filter_sites[i, "tipo"] %in% c("end", "stop")) {
+      read_id_filter = c(read_id_filter, gff3_filtered_by_exon[gff3_filtered_by_exon$end_tag == filter_sites[i, "site"],"id"])
+    }
+  }
+  
+  final_id_filter = names(table(read_id_filter))[table(read_id_filter) == nrow(filter_sites)]
+  final_id_filter_out = unique(gff3_filtered_by_exon[!gff3_filtered_by_exon$id %in% final_id_filter,"id"])
+  gff3_filtered_by_exon = gff3_filtered_by_exon[gff3_filtered_by_exon$id %in% final_id_filter,]
+  num_reads_post_site_filtering = length(unique(gff3_filtered_by_exon$id))
+}
+
 
 
 # Exon difinition
@@ -304,7 +345,7 @@ p0 = ggplot(df_pos, aes(x = x_pos, y = y_pos, group = paste_pair, color = star_s
   labs(color = "Exon coordinates") +
   scale_x_continuous(position = "top") +
   ggtitle(run_name)
-p0
+#p0
 
 ggsave(path = plot_path, filename = paste(run_name, ".all_isoform_information.pdf", sep = ""), p0, device="pdf", width = 10,
        height = 1 + num_isoforms/4, limitsize = F)
@@ -354,7 +395,7 @@ p3 = ggplot(df_superplot, aes(x=Var1, y=perc, fill = tipo)) +
   labs(fill = "Break point\ntype") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, size = 2))
-p3
+#p3
 
 ggsave(path = plot_path, filename = paste(run_name, ".breakpoint_superplot.pdf", sep = ""), p3, device="pdf", width = 100,
        height = 5, limitsize = F)
@@ -379,7 +420,7 @@ p4 = ggplot(df_plot, aes(x=posicion, fill = tipo)) +
   xlab("Break point position") +
   labs(fill = "Break point\ntype") +
   theme_bw()
-p4
+#p4
 
 ggsave(path = plot_path, filename = paste(run_name, ".breakpoints.pdf", sep = ""), p4, device="pdf", width = 10,
        height = 5, limitsize = F)
@@ -422,7 +463,7 @@ p11 = ggplot(df_pos[df_pos$perc >= abundance,], aes(x = x_pos, y = y_pos, color 
   theme(plot.background = element_rect(fill = "white", colour = "white")) +
   #theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   ggtitle(run_name)
-p11
+#p11
 
 
 
@@ -440,7 +481,7 @@ p44 = ggplot(df_plot, aes(x=posicion, fill = tipo)) +
   theme(plot.background = element_rect(fill = "white", colour = "white"),
         legend.title = element_text(size = 5)) #+
   #theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-p44
+#p44
 
 
 
@@ -448,7 +489,7 @@ p44
 num_iso = max(c(length(unique(df_pos[df_pos$perc >= abundance,"y_pos"])), length(unique(df_pos[df_pos$perc >= abundance,"star_stop"])) + 1), 4)
 
 p_vertical_2 = cowplot::plot_grid(p11, p44, ncol=1, align='v', rel_heights = c(num_iso/3,2), axis = "lr")
-p_vertical_2
+#p_vertical_2
 
 ggsave(path = plot_path, filename = paste(run_name, ".combined_plot_vertical.pdf", sep = ""), p_vertical_2, device="pdf", width = 10,
        height = 2 + num_iso/3, limitsize = F)
@@ -490,19 +531,32 @@ if (identical(setdiff(gff3$id, gff3_filtered$id), character(0))){
   vector_reads = data.frame(read_ids = setdiff(gff3$id, gff3_filtered$id), group = "Only_vector_reads", stringsAsFactors = FALSE)
 }
 
-no_consensous_breakpoint_reads = data.frame(read_ids = setdiff(gff3_filtered$id, gff3_filtered_by_exon$id), group = "No_consensous_breakpoint_reads", stringsAsFactors = FALSE)
+no_consensous_breakpoint_reads = data.frame(read_ids = unique(exon_id_filter), group = "No_consensous_breakpoint_reads", stringsAsFactors = FALSE)
 read_isoform_df = data.frame(read_ids = names(read_isoform), group = as.character(read_isoform), stringsAsFactors = FALSE)
 
-all_read_group = rbind(no_map_df, vector_reads, no_consensous_breakpoint_reads, read_isoform_df)
+if (!is.null(filter_sites_file)){
+  final_id_filter_out_reads = data.frame(read_ids = unique(final_id_filter_out), group = "Filter_out_reads", stringsAsFactors = FALSE)
+  all_read_group = rbind(no_map_df, vector_reads, no_consensous_breakpoint_reads, final_id_filter_out_reads, read_isoform_df)
+}else{
+  all_read_group = rbind(no_map_df, vector_reads, no_consensous_breakpoint_reads, read_isoform_df)
+}
+
+
 write.table(all_read_group, file = paste(plot_path, "/", run_name, ".read_clasification.tsv", sep = ""), quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
 
 
 
 
 # Isoform freq
-other_groups_df = data.frame(read_isoform = c("Unmapped", "Only_vector_reads", "No_consensous_breakpoint_reads"), 
-                             Freq = c(nrow(no_map_df), nrow(vector_reads), nrow(no_consensous_breakpoint_reads)),
-                             perc = c("-", "-", "-"), stringsAsFactors = FALSE)
+if (!is.null(filter_sites_file)){
+  other_groups_df = data.frame(read_isoform = c("Unmapped", "Only_vector_reads", "No_consensous_breakpoint_reads", "Filter_out_reads"), 
+                               Freq = c(nrow(no_map_df), nrow(vector_reads), nrow(no_consensous_breakpoint_reads), nrow(final_id_filter_out_reads)),
+                               perc = c("-", "-", "-","-"), stringsAsFactors = FALSE)
+}else{
+  other_groups_df = data.frame(read_isoform = c("Unmapped", "Only_vector_reads", "No_consensous_breakpoint_reads"), 
+                               Freq = c(nrow(no_map_df), nrow(vector_reads), nrow(no_consensous_breakpoint_reads)),
+                               perc = c("-", "-", "-"), stringsAsFactors = FALSE)
+}
 all_groups = rbind(other_groups_df, isoform_frequencies)
 all_groups$perc_total = round(all_groups$Freq*100/sum(all_groups$Freq), 2)
 colnames(all_groups) =  c("Group", "N_of_reads", "Prerc_partial", "Perc_total")
