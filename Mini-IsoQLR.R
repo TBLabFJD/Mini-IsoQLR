@@ -37,7 +37,9 @@ option_list = list(
   make_option(c("-p", "--padding"), type="integer", default=5, 
               help="number of bases to each side from a defined break point to consider a read as part of that group [default= %default]", metavar="integer"),
   make_option(c("-a", "--abundance"), type="double", default=5, 
-              help="only isoforms with a percentage equal or higher will be displayed on the combined plot [default= %default]", metavar="integer")
+              help="only isoforms with a percentage equal or higher will be displayed on the combined plot [default= %default]", metavar="integer"),
+  make_option(c("-v", "--very_close_bp"), action='store_true',
+              help="If two breakpoints from the same type (start/end) are closer than 2bp and one of them is more than twice as frequent than the other, the less frequent is removed")
   )
 
 opt_parser = OptionParser(option_list=option_list);
@@ -55,13 +57,26 @@ final = opt$final
 breakpoint_freq_threshold = opt$threshold
 breakpoint_padding = opt$padding
 abundance = opt$abundance
+very_close_bp = opt$very_close_bp
 
 # gff3_path = "/home/gonzalo/tblab/home/gonzalo/pax6/post_trimm_multiplex1/mapped/cluster_cons_BARCODE02.gff3"
-# plot_path = "/home/gonzalo/tblab/home/gonzalo/pax6/post_trimm_multiplex1/plots/plot_BARCODE02/"
+# plot_path = "/home/gonzalo/tblab/home/gonzalo/pax6/post_trimm_multiplex1/plots/BARCODE02/"
 # log_map_path = "/home/gonzalo/tblab/home/gonzalo/pax6/post_trimm_multiplex1/mapped/log_BARCODE02.err"
 # run_name = "Multiplex1_BARCODE02"
 # known_sites_file = NULL
-# filter_sites_file = NULL
+# filter_sites_file = "/home/gonzalo/tblab/home/gonzalo/pax6/post_trimm_multiplex1/filter_sites.txt"
+# inicio = 1200
+# final = 3500
+# breakpoint_freq_threshold = 5
+# breakpoint_padding = 5
+# abundance = 5
+
+# gff3_path = "/home/gonzalo/tblab/home/gonzalo/pax6/post_trimm_multiplex2/mapped/cluster_cons_BARCODE01.gff3"
+# plot_path = "/home/gonzalo/tblab/home/gonzalo/pax6/post_trimm_multiplex2/plots/BARCODE01/"
+# log_map_path = "/home/gonzalo/tblab/home/gonzalo/pax6/post_trimm_multiplex2/mapped/log_BARCODE01.err"
+# run_name = "Multiplex2_BARCODE01"
+# known_sites_file = NULL
+# filter_sites_file = "/home/gonzalo/tblab/home/gonzalo/pax6/post_trimm_multiplex2/filtersites.txt"
 # inicio = 1200
 # final = 3500
 # breakpoint_freq_threshold = 5
@@ -69,7 +84,7 @@ abundance = opt$abundance
 # abundance = 5
 
 # gff3_path = "/home/gonzalo/tblab/home/gonzalo/pax6/post_trimm_multiplex2_2/mapped/cluster_cons_BARCODE08.gff3"
-# plot_path = "/home/gonzalo/tblab/home/gonzalo/pax6/post_trimm_multiplex2_2/plots/plot_BARCODE08/"
+# plot_path = "/home/gonzalo/tblab/home/gonzalo/pax6/post_trimm_multiplex2_2/plots/BARCODE08/"
 # log_map_path = "/home/gonzalo/tblab/home/gonzalo/pax6/post_trimm_multiplex2_2/mapped/log_BARCODE08.err"
 # run_name = "Multiplex1_BARCODE02"
 # known_sites_file = "/home/gonzalo/tblab/home/gonzalo/pax6/211115_minigenes_multiplex3_2/knownsites.txt"
@@ -127,6 +142,29 @@ end_count = end_count[end_count>num_reads_post_trimming*breakpoint_freq_threshol
 
 start_position = data.frame(breakp = as.numeric(names(start_count)), freq = as.numeric(start_count), stringsAsFactors = F)
 end_position = data.frame(breakp = as.numeric(names(end_count)), freq = as.numeric(end_count), stringsAsFactors = F)
+
+
+
+# If two breakpoints from the same type (start/end) are closer than 2bp and one of them is more than twice as frequent than the other, the less frequent is removed
+if (breakpoint_padding >= 2 & !is.null(very_close_bp)){
+  start_pos_to_remove=c()
+  for (i in 1:(nrow(start_position)-1)){
+    if (start_position[i, "breakp"] + 2 >=  start_position[i+1, "breakp"]){
+      if (start_position[i, "freq"] / 2 > start_position[i+1, "freq"]){start_pos_to_remove = c(start_pos_to_remove, i+1)}
+        else if (start_position[i, "freq"] * 2 < start_position[i+1, "freq"]){start_pos_to_remove = c(start_pos_to_remove, i)}
+    }
+  }
+  if (!is.null(start_pos_to_remove)) {start_position = start_position[-start_pos_to_remove,]}
+  
+  end_pos_to_remove=c()
+  for (i in 1:(nrow(end_position)-1)){
+    if (end_position[i, "breakp"] + 2 >=  end_position[i+1, "breakp"]){
+      if (end_position[i, "freq"] / 2 > end_position[i+1, "freq"]){end_pos_to_remove = c(end_pos_to_remove, i+1)}
+      else if (end_position[i, "freq"] * 2 < end_position[i+1, "freq"]){end_pos_to_remove = c(end_pos_to_remove, i)}
+    }
+  }
+  if (!is.null(end_pos_to_remove)) {end_position = end_position[-end_pos_to_remove,]}
+}
 
 
 
@@ -272,7 +310,12 @@ read_list = split(gff3_filtered_by_exon, gff3_filtered_by_exon$id)
 read_isoform = unlist(lapply(read_list, function(x) paste(sort(x$coordinates), collapse = "-")))
 
 # frequency calculation
-isoform_frequencies = data.frame(sort(table(read_isoform), decreasing = TRUE))
+if(length(unique(read_isoform)) == 1){
+  isoform_frequencies = data.frame(read_isoform = unique(unique(read_isoform)), Freq = length(read_isoform))
+  
+}else{
+  isoform_frequencies = data.frame(sort(table(read_isoform), decreasing = TRUE))
+}
 isoform_frequencies$read_isoform = as.character(isoform_frequencies$read_isoform)
 isoform_frequencies$perc = isoform_frequencies$Freq * 100 / sum(isoform_frequencies$Freq)
 isoform_frequencies$perc = unlist(lapply(isoform_frequencies$perc, function(x) round(x, 1)))
@@ -471,6 +514,7 @@ p44 = ggplot(df_plot, aes(x=posicion, fill = tipo)) +
   geom_histogram(aes(y=..count../num_reads_post_trimming*100),alpha=0.5, 
                  position="identity", bins = 500) +
   scale_x_continuous(breaks = seq(inicio,final,round((final-inicio)/12, 0)), limits = c(inicio-10,final+10)) +
+  scale_y_continuous(breaks = seq(0,100,20), limits = c(-1,101)) +
   ylab("% of reads") +
   xlab("Position") +
   labs(fill = "Break point\ntype") +

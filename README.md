@@ -1,5 +1,5 @@
 # Mini-IsoQLR: Pipeline for Isoform Quantification using Long-Reads sequencing data
-This pipeline was developed to detect and quantify isoforms from the expression of minigenes, whose cDNA was sequenced using Oxford Nanopore Technologies (ONT).
+This pipeline was developed to detect and quantify isoforms from the expression of minigenes, whose cDNA was sequenced using Oxford Nanopore Technologies (ONT). This pipeline has been successfully run using RT-PCR data directly from the patient sample. 
 This protocol uses [GMAP](https://academic.oup.com/bioinformatics/article/21/9/1859/409207) aligner, which aligns cDNA sequences to a genome, using the parameter `--format=2` which generates a GFF3 file which contains the coordinates of the exons from all reads. Using this information, `Mini-IsoQLR.R` classify the mapped reads into isoforms. To do so, it:
 1.  defines the consensus breakpoints (start and end of exons which are present in more than 5% of the reads by default), 
 2.  sets a lower and higher threshold that is used to rescue reads whose breakpoints do not exactly coincide with the consensus breakpoints but are close to one,
@@ -72,6 +72,7 @@ Rscript Mini-IsoQLR.R -i ${gff3} -o ${outputDir} -l ${error} -r ${runName}
 | -t/--threshold | 5 | threshold (0-100%) used to filter the breakpoints present in mode than x % of the reads |
 | -p/--padding | 5 | number of bases to each side from a defined break point to consider a read as part of that group |
 | -a/--abundance | 5 | only isoforms with a percentage equal or higher will be displayed on the combined plot |
+| -v/--very_close_bp | NULL | If two breakpoints from the same type (start/end) are closer than 2bp and one of them is more than twice as frequent than the other, the less frequent is removed |
 
 Note that, although this pipeline detects break points without previous information, it is possible to add known splice sites with the `-k/--known_sites` argument. The program won't report any splice site of the same type ("start"/"end") inside the specified range. We have used this parameter to extend the padding of the "end" position of the last exon of one of the cases as the low sequenced quality of this exon did not produce a well defined modal distribution in this point. We ran `Mini-IsoQLR.R` twice: the fist one to check the possible rage seeing the break point distribution, and the second time defining this break point. 
 
