@@ -298,7 +298,10 @@ if (!is.null(filter_sites_file)){
 
 
 # Exon difinition
-gff3_filtered_by_exon$coordinates = paste(gff3_filtered_by_exon$start_tag, gff3_filtered_by_exon$end_tag, sep = "_")
+max_with = max(floor(log10(c(gff3_filtered_by_exon$start_tag, gff3_filtered_by_exon$end_tag))) + 1)
+gff3_filtered_by_exon$start_tag_formated = formatC(gff3_filtered_by_exon$start_tag, width = max_with, flag = "0", digits = max_with)
+gff3_filtered_by_exon$end_tag_formated = formatC(gff3_filtered_by_exon$end_tag, width = max_with, flag = "0", digits = max_with)
+gff3_filtered_by_exon$coordinates = paste(gff3_filtered_by_exon$start_tag_formated, gff3_filtered_by_exon$end_tag_formated, sep = "_")
 
 
 
