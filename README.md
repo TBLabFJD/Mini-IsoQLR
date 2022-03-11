@@ -9,6 +9,14 @@ This protocol uses [GMAP](https://academic.oup.com/bioinformatics/article/21/9/1
 [![Workflow](https://github.com/TBLabFJD/Mini-IsoQLR/blob/master/Workflow.png)](https://github.com/TBLabFJD/Mini-IsoQLR)
 Complete bioinformatics protocol we followed using data sequended with a MinION sequencer(Oxford Nanopore Technology). Basecalling, demultiplexing and quality filtering is not included in the pipeline. This pipeline starts from the FASTQ file.
 
+## Developers
+### Main developers
+ - Gonzalo Núñez Moreno
+
+### Contact
+ - Gonzalo Núñez Moreno (gonzalo.nunezm@quironsalud.es)
+
+
 ## License
 Mini-IsoQLR source code is provided under the [**Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)**](https://creativecommons.org/licenses/by-nc-sa/4.0/). Mini-IsoQLR includes several third party packages provided under other open source licenses, please check them for additional details.
 
